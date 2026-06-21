@@ -1,10 +1,10 @@
 package impl
 
 import (
-	"better-docker-ps/cli"
-	"better-docker-ps/docker"
-	"better-docker-ps/printer"
-	"better-docker-ps/pserr"
+	"better-podman-ps/cli"
+	"better-podman-ps/podman"
+	"better-podman-ps/printer"
+	"better-podman-ps/pserr"
 	"encoding/json"
 	"fmt"
 	"git.blackforestbytes.com/BlackForestBytes/goext/langext"
@@ -51,17 +51,17 @@ func executeSingle(ctx *cli.PSContext, clear bool) error {
 		}
 	}
 
-	jsonraw, err := docker.ListContainer(ctx)
+	jsonraw, err := podman.ListContainer(ctx)
 	if err != nil {
 		return err
 	}
 
 	ctx.PrintVerboseKV("API response", langext.TryPrettyPrintJson(string(jsonraw)))
 
-	var data []docker.ContainerSchema
+	var data []podman.ContainerSchema
 	err = json.Unmarshal(jsonraw, &data)
 	if err != nil {
-		return pserr.DirectOutput.Wrap(err, "Failed to decode Docker API response")
+		return pserr.DirectOutput.Wrap(err, "Failed to decode API response")
 	}
 
 	enrichWithInspectData(ctx, data)
@@ -96,7 +96,7 @@ func executeSingle(ctx *cli.PSContext, clear bool) error {
 // enrichWithInspectData fetches additional per-container data from the container-inspect endpoint,
 // but only when a requested column actually needs it (currently only the User column).
 // The container-list endpoint does not return Config.User, so it has to be queried separately.
-func enrichWithInspectData(ctx *cli.PSContext, data []docker.ContainerSchema) {
+func enrichWithInspectData(ctx *cli.PSContext, data []podman.ContainerSchema) {
 	if !needsInspectData(ctx) {
 		return
 	}
@@ -107,7 +107,7 @@ func enrichWithInspectData(ctx *cli.PSContext, data []docker.ContainerSchema) {
 	}
 
 	for i := range data {
-		insp, err := docker.InspectContainer(ctx, data[i].ID)
+		insp, err := podman.InspectContainer(ctx, data[i].ID)
 		if err != nil {
 			ctx.PrintVerbose(fmt.Sprintf("Failed to inspect container '%s': %v", data[i].ID, err.Error()))
 			continue
@@ -130,7 +130,7 @@ func needsInspectData(ctx *cli.PSContext) bool {
 	return false
 }
 
-func doSearch(ctx *cli.PSContext, data []docker.ContainerSchema, needle string) []docker.ContainerSchema {
+func doSearch(ctx *cli.PSContext, data []podman.ContainerSchema, needle string) []podman.ContainerSchema {
 	needle = strings.ToLower(needle)
 
 	haystackFormat := ""
@@ -141,7 +141,7 @@ func doSearch(ctx *cli.PSContext, data []docker.ContainerSchema, needle string) 
 		}
 	}
 
-	result := make([]docker.ContainerSchema, 0, len(data))
+	result := make([]podman.ContainerSchema, 0, len(data))
 	for _, cont := range data {
 		hay := cont.ID + " " + strings.Join(cont.Names, " ") + " " + cont.Image + " " + cont.Command
 		if haystackFormat != "" {
@@ -158,9 +158,9 @@ func doSearch(ctx *cli.PSContext, data []docker.ContainerSchema, needle string) 
 	return result
 }
 
-func doSort(ctx *cli.PSContext, data []docker.ContainerSchema, skeys []string, sdirs []cli.SortDirection) []docker.ContainerSchema {
+func doSort(ctx *cli.PSContext, data []podman.ContainerSchema, skeys []string, sdirs []cli.SortDirection) []podman.ContainerSchema {
 
-	langext.SortSliceStable(data, func(v1, v2 docker.ContainerSchema) bool {
+	langext.SortSliceStable(data, func(v1, v2 podman.ContainerSchema) bool {
 
 		// return true if v1 < v2
 
@@ -189,7 +189,7 @@ func doSort(ctx *cli.PSContext, data []docker.ContainerSchema, skeys []string, s
 	return data
 }
 
-func doOutput(ctx *cli.PSContext, data []docker.ContainerSchema, format string, force bool) (bool, error) {
+func doOutput(ctx *cli.PSContext, data []podman.ContainerSchema, format string, force bool) (bool, error) {
 	if format == "idlist" {
 
 		for _, v := range data {

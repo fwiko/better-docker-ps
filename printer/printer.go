@@ -1,16 +1,16 @@
 package printer
 
 import (
-	"better-docker-ps/cli"
-	"better-docker-ps/docker"
+	"better-podman-ps/cli"
+	"better-podman-ps/podman"
 	"git.blackforestbytes.com/BlackForestBytes/goext/mathext"
 	"git.blackforestbytes.com/BlackForestBytes/goext/termext"
 	"strings"
 )
 
-type ColFun = func(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string
+type ColFun = func(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string
 
-func Width(ctx *cli.PSContext, data []docker.ContainerSchema, cols []ColFun) int {
+func Width(ctx *cli.PSContext, data []podman.ContainerSchema, cols []ColFun) int {
 	var cells = make([][]string, 0)
 
 	if ctx.Opt.PrintHeader {
@@ -65,7 +65,7 @@ func Width(ctx *cli.PSContext, data []docker.ContainerSchema, cols []ColFun) int
 	return w + 4*(len(cols)-1)
 }
 
-func Print(ctx *cli.PSContext, data []docker.ContainerSchema, cols []ColFun) {
+func Print(ctx *cli.PSContext, data []podman.ContainerSchema, cols []ColFun) {
 
 	var cells = make([][]string, 0)
 

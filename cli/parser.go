@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"better-docker-ps/pserr"
+	"better-podman-ps/pserr"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,14 +28,14 @@ func ParseCommandline(columnKeys []string) (Options, error) {
 func findConfigFile() (string, []byte, bool) {
 	candidates := make([]string, 0, 3)
 
-	candidates = append(candidates, filepath.Join(configdir.LocalConfig(), "dops.conf"))
+	candidates = append(candidates, filepath.Join(configdir.LocalConfig(), "pops.conf"))
 
 	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
-		candidates = append(candidates, filepath.Join(xdg, "dops.conf"))
+		candidates = append(candidates, filepath.Join(xdg, "pops.conf"))
 	}
 
 	if home, err := os.UserHomeDir(); err == nil {
-		candidates = append(candidates, filepath.Join(home, ".config", "dops.conf"))
+		candidates = append(candidates, filepath.Join(home, ".config", "pops.conf"))
 	}
 
 	seen := make(map[string]bool, len(candidates))

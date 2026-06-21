@@ -1,9 +1,9 @@
-package docker
+package podman
 
 import (
-	"better-docker-ps/cli"
-	"better-docker-ps/consts"
-	"better-docker-ps/pserr"
+	"better-podman-ps/cli"
+	"better-podman-ps/consts"
+	"better-podman-ps/pserr"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -27,7 +27,12 @@ func ListContainer(ctx *cli.PSContext) ([]byte, error) {
 		return data, nil
 	}
 
-	client := newSocketClient(ctx.Opt.GetSocket())
+	sock, err := ctx.Opt.GetSocket()
+	if err != nil {
+		return nil, pserr.DirectOutput.Wrap(err, "Failed to find socket")
+	}
+
+	client := newSocketClient(sock)
 
 	uri := fmt.Sprintf("%s?1=1", consts.DockerAPIContainerList)
 
@@ -72,7 +77,12 @@ func ListContainer(ctx *cli.PSContext) ([]byte, error) {
 // InspectContainer queries the container-inspect endpoint for a single container.
 // This is needed for data that the (cheaper) container-list endpoint does not return, e.g. Config.User.
 func InspectContainer(ctx *cli.PSContext, containerID string) (*ContainerInspectSchema, error) {
-	client := newSocketClient(ctx.Opt.GetSocket())
+	sock, err := ctx.Opt.GetSocket()
+	if err != nil {
+		return nil, pserr.DirectOutput.Wrap(err, "Failed to find socket")
+	}
+
+	client := newSocketClient(sock)
 
 	uri := fmt.Sprintf(consts.DockerAPIContainerInspect, containerID)
 

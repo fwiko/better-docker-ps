@@ -1,7 +1,0 @@
-pkg/
-src/
-dops/
-dops-bin/
-dops-git/
-.SRCINFO
-*.tar.zst

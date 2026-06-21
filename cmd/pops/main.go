@@ -1,10 +1,10 @@
 package main
 
 import (
-	"better-docker-ps/cli"
-	"better-docker-ps/consts"
-	"better-docker-ps/impl"
-	"better-docker-ps/pserr"
+	"better-podman-ps/cli"
+	"better-podman-ps/consts"
+	"better-podman-ps/impl"
+	"better-podman-ps/pserr"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -40,7 +40,7 @@ func main() {
 	defer ctx.Finish()
 
 	if opt.Version {
-		ctx.PrintPrimaryOutput("better-docker-ps v" + consts.BETTER_DOCKER_PS_VERSION)
+		ctx.PrintPrimaryOutput("better-podman-ps v" + consts.BETTER_PODMAN_PS_VERSION)
 		os.Exit(0)
 		return
 	}
@@ -78,10 +78,10 @@ func main() {
 }
 
 func printHelp(ctx *cli.PSContext) {
-	ctx.PrintPrimaryOutput("better-docker-ps")
+	ctx.PrintPrimaryOutput("better-podman-ps")
 	ctx.PrintPrimaryOutput("")
 	ctx.PrintPrimaryOutput("Usage:")
-	ctx.PrintPrimaryOutput("  dops [OPTIONS]                     List docker container")
+	ctx.PrintPrimaryOutput("  pops [OPTIONS]                     List podman container")
 	ctx.PrintPrimaryOutput("")
 	ctx.PrintPrimaryOutput("Options (default):")
 	ctx.PrintPrimaryOutput("  -h, --help                         Show this screen.")
@@ -96,12 +96,12 @@ func printHelp(ctx *cli.PSContext) {
 	ctx.PrintPrimaryOutput("  --quiet , -q                       Only display container IDs")
 	ctx.PrintPrimaryOutput("  --size , -s                        Display total file sizes")
 	ctx.PrintPrimaryOutput("")
-	ctx.PrintPrimaryOutput("Options (extra | do not exist in `docker ps`):")
+	ctx.PrintPrimaryOutput("Options (extra | do not exist in `podman ps`):")
 	ctx.PrintPrimaryOutput("  --silent                           Do not print any output")
 	ctx.PrintPrimaryOutput("  --timezone                         Specify the timezone for date outputs")
 	ctx.PrintPrimaryOutput("  --color <true|false>               Enable/Disable terminal color output")
 	ctx.PrintPrimaryOutput("  --no-color                         Disable terminal color output")
-	ctx.PrintPrimaryOutput("  --socket <filepath>                Specify the docker socket location (Default: `auto` - which calls the docker cli to determine the socket)")
+	ctx.PrintPrimaryOutput("  --socket <filepath>                Specify the podman socket location (Default: `auto`")
 	ctx.PrintPrimaryOutput("  --timeformat <go-time-fmt>         Specify the datetime output format (golang syntax)")
 	ctx.PrintPrimaryOutput("  --no-header                        Do not print the table header")
 	ctx.PrintPrimaryOutput("  --simple-header                    Do not print the lines under the header")
@@ -116,7 +116,7 @@ func printHelp(ctx *cli.PSContext) {
 	ctx.PrintPrimaryOutput("  {{.Command}}                       Quoted command")
 	ctx.PrintPrimaryOutput("  {{.CreatedAt}}                     Time when the container was created.")
 	ctx.PrintPrimaryOutput("  {{.RunningFor}}                    Elapsed time since the container was started.")
-	ctx.PrintPrimaryOutput("  {{.Ports}}                         Published ports. ([!] differs from docker CLI, these are only the published ports)")
+	ctx.PrintPrimaryOutput("  {{.Ports}}                         Published ports. ([!] differs from podman CLI, these are only the published ports)")
 	ctx.PrintPrimaryOutput("  {{.State}}                         Container status")
 	ctx.PrintPrimaryOutput("  {{.Status}}                        Container status with details")
 	ctx.PrintPrimaryOutput("  {{.Size}}                          Container disk size.")
@@ -126,7 +126,7 @@ func printHelp(ctx *cli.PSContext) {
 	ctx.PrintPrimaryOutput("  {{.Mounts}}                        Names of the volumes mounted in this container.")
 	ctx.PrintPrimaryOutput("  {{.Networks}}                      Names of the networks attached to this container.")
 	ctx.PrintPrimaryOutput("")
-	ctx.PrintPrimaryOutput("Available --format keys (extra | do not exist in `docker ps`):")
+	ctx.PrintPrimaryOutput("Available --format keys (extra | do not exist in `podman ps`):")
 	ctx.PrintPrimaryOutput("  {{.ImageName}                      Image ID (without tag and registry)")
 	ctx.PrintPrimaryOutput("  {{.ImageTag}, {{.Tag}              Image Tag")
 	ctx.PrintPrimaryOutput("  {{.ImageRegistry}, {{.Registry}    Image Registry")

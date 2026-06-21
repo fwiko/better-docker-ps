@@ -1,4 +1,4 @@
-package docker
+package podman
 
 import (
 	"git.blackforestbytes.com/BlackForestBytes/goext/langext"

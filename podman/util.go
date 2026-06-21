@@ -1,7 +1,7 @@
-package docker
+package podman
 
 import (
-	"better-docker-ps/cli"
+	"better-podman-ps/cli"
 	"strings"
 )
 
@@ -13,7 +13,7 @@ var registryPrefixList = []string{
 	".org",
 }
 
-func SplitDockerImage(ctx *cli.PSContext, img string) (string, string, string) {
+func SplitContainerImage(ctx *cli.PSContext, img string) (string, string, string) {
 
 	resultRegistry := ""
 	resultImage := ""

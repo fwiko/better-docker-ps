@@ -2,10 +2,9 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
-	"runtime"
 	"strings"
 	"time"
 
@@ -87,70 +86,71 @@ func DefaultCLIOptions() Options {
 	}
 }
 
-func getDefaultSocket() string {
-	if runtime.GOOS == "darwin" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "/var/run/docker.sock"
-		}
-		return filepath.Join(home, ".docker/run/docker.sock")
-	}
-	return "/var/run/docker.sock"
-}
-
-func (o Options) GetSocket() string {
-
+func (o Options) GetSocket() (string, error) {
 	// [1] Manually specified socket
 
 	if o.Socket != "auto" {
-		return o.Socket
+		return o.Socket, nil
 	}
 
-	// [2] Auto-detect from current docker context
+	// [2] Auto-detect podman socket
 
-	res, err := cmdext.Runner("docker").Arg("context").Arg("list").Arg("--format").Arg("json").Timeout(10 * time.Second).FailOnTimeout().FailOnExitCode().Run()
+	res, err := getPodmanSocket()
 	if err == nil {
-		for _, line := range strings.Split(res.StdOut, "\n") {
-			var context dockerContext
-			err = json.Unmarshal([]byte(line), &context)
-			if err != nil {
-				continue
-			}
-			if context.Current {
-				return context.socket()
+		return res, nil
+	}
+
+	return "", fmt.Errorf("no podman socket found — try running 'systemctl --user enable --now podman.socket' (%w)", err)
+}
+
+type podmanConnection struct {
+	Name      string `json:"Name"`
+	URI       string `json:"URI"`
+	Identity  string `json:"Identity"`
+	Default   bool   `json:"Default"`
+	ReadWrite bool   `json:"ReadWrite"`
+}
+
+func getPodmanSocket() (string, error) {
+	res, err := cmdext.Runner("podman").
+		Arg("system").Arg("connection").Arg("list").
+		Arg("--format").Arg("json").
+		Timeout(10 * time.Second).
+		FailOnTimeout().FailOnExitCode().
+		Run()
+
+	if err == nil {
+		var connections []podmanConnection
+		if jsonErr := json.Unmarshal([]byte(res.StdOut), &connections); jsonErr == nil {
+			for _, c := range connections {
+				if c.Default {
+					return strings.TrimPrefix(c.URI, "unix://"), nil
+				}
 			}
 		}
 	}
 
-	// [3] MacOS homedir
+	return defaultPodmanSocket()
+}
 
-	if runtime.GOOS == "darwin" {
-		if home, err := os.UserHomeDir(); err == nil {
-			fp := filepath.Join(home, ".docker/run/docker.sock")
-			if _, err = os.Stat(fp); err == nil {
-				return fp
-			}
+func defaultPodmanSocket() (string, error) {
+	if uid := os.Geteuid(); uid != 0 {
+		runtimeDir := os.Getenv("XDG_RUNTIME_DIR")
+		if runtimeDir == "" {
+			runtimeDir = fmt.Sprintf("/run/user/%d", uid)
 		}
+		path := filepath.Join(runtimeDir, "podman", "podman.sock")
+		if _, err := os.Stat(path); err == nil {
+			return path, nil
+		}
+		return "", fmt.Errorf("rootless podman socket not found at %s (is podman.socket enabled?)", path)
 	}
 
-	// [4] Default
-
-	return "/var/run/docker.sock"
-}
-
-type dockerContext struct {
-	Name           string
-	Description    string
-	DockerEndpoint string
-	Current        bool
-	Error          string
-	ContextType    string
-}
-
-var unixSocketPrefixPat = regexp.MustCompile("^unix://")
-
-func (ctx dockerContext) socket() string {
-	return unixSocketPrefixPat.ReplaceAllString(ctx.DockerEndpoint, "")
+	path := "/run/podman/podman.sock"
+	if _, err := os.Stat(path); err == nil {
+		return path, nil
+	}
+	return "", fmt.Errorf("rootful podman socket not found at %s", path)
 }
 
 func p(v bool) *bool {

@@ -1,9 +1,9 @@
 package impl
 
 import (
-	"better-docker-ps/cli"
-	"better-docker-ps/docker"
-	"better-docker-ps/printer"
+	"better-podman-ps/cli"
+	"better-podman-ps/podman"
+	"better-podman-ps/printer"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -22,7 +22,7 @@ import (
 
 var rexIP = rext.W(regexp.MustCompile("^(?P<b0>[0-9]{1,3})\\.(?P<b1>[0-9]{1,3})\\.(?P<b2>[0-9]{1,3})\\.(?P<b3>[0-9]{1,3})$"))
 
-type ColSortFun = func(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int
+type ColSortFun = func(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int
 
 type ColumnDef struct {
 	Reader printer.ColFun
@@ -62,7 +62,7 @@ var ColumnMap = map[string]ColumnDef{
 	"User":                {ColUser, SortUser},
 }
 
-func ColContainerID(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColContainerID(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"CONTAINER ID"}
 	}
@@ -74,7 +74,7 @@ func ColContainerID(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *
 	}
 }
 
-func ColFullImage(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColFullImage(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"IMAGE"}
 	}
@@ -82,37 +82,37 @@ func ColFullImage(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *do
 	return []string{cont.Image}
 }
 
-func ColRegistry(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColRegistry(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"REGISTRY"}
 	}
 
-	v, _, _ := docker.SplitDockerImage(ctx, cont.Image)
+	v, _, _ := podman.SplitContainerImage(ctx, cont.Image)
 
 	return []string{v}
 }
 
-func ColImage(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColImage(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"IMAGE"}
 	}
 
-	_, v, _ := docker.SplitDockerImage(ctx, cont.Image)
+	_, v, _ := podman.SplitContainerImage(ctx, cont.Image)
 
 	return []string{v}
 }
 
-func ColImageTag(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColImageTag(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"TAG"}
 	}
 
-	_, _, v := docker.SplitDockerImage(ctx, cont.Image)
+	_, _, v := podman.SplitContainerImage(ctx, cont.Image)
 
 	return []string{v}
 }
 
-func ColCommand(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColCommand(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"COMMAND"}
 	}
@@ -127,7 +127,7 @@ func ColCommand(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *dock
 	return []string{cmd}
 }
 
-func ColShortCommand(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColShortCommand(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"COMMAND"}
 	}
@@ -141,7 +141,7 @@ func ColShortCommand(ctx *cli.PSContext, allData []docker.ContainerSchema, cont 
 
 }
 
-func ColRunningFor(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColRunningFor(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"CREATED"}
 	}
@@ -152,7 +152,7 @@ func ColRunningFor(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *d
 	return []string{timeext.FormatNaturalDurationEnglish(diff)}
 }
 
-func ColCreatedAt(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColCreatedAt(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		if ctx.Opt.TimeFormatHeader != "" {
 			hdr := time.Now().In(ctx.Opt.TimeZone).Format(ctx.Opt.TimeFormatHeader)
@@ -170,7 +170,7 @@ func ColCreatedAt(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *do
 	return []string{ts.In(ctx.Opt.TimeZone).Format(ctx.Opt.TimeFormat)}
 }
 
-func ColState(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColState(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"STATE"}
 	}
@@ -184,7 +184,7 @@ func ColState(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker
 	return []string{stateColor(cont.State, strstate)}
 }
 
-func ColStatus(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColStatus(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"STATUS"}
 	}
@@ -196,7 +196,7 @@ func ColStatus(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docke
 	return []string{statusColor(cont.Status, cont.Status)}
 }
 
-func ColPortsExposed(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColPortsExposed(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"EXPOSED PORTS"}
 	}
@@ -225,7 +225,7 @@ func ColPortsExposed(ctx *cli.PSContext, allData []docker.ContainerSchema, cont 
 	return r
 }
 
-func ColPortsPublicPart(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColPortsPublicPart(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"EXPOSED PORTS"}
 	}
@@ -245,7 +245,7 @@ func ColPortsPublicPart(ctx *cli.PSContext, allData []docker.ContainerSchema, co
 	return r
 }
 
-func ColPortsPublished(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColPortsPublished(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"PUBLISHED PORTS"}
 	}
@@ -291,7 +291,7 @@ func ColPortsPublished(ctx *cli.PSContext, allData []docker.ContainerSchema, con
 	return r
 }
 
-func ColPortsPublishedShort(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColPortsPublishedShort(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"PUBLISHED PORTS"}
 	}
@@ -334,7 +334,7 @@ func ColPortsPublishedShort(ctx *cli.PSContext, allData []docker.ContainerSchema
 	return r
 }
 
-func ColPortsPublishedLong(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColPortsPublishedLong(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"PUBLISHED PORTS"}
 	}
@@ -388,7 +388,7 @@ func ColPortsPublishedLong(ctx *cli.PSContext, allData []docker.ContainerSchema,
 	return r
 }
 
-func ColPortsNotPublished(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColPortsNotPublished(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"NOT PUBLISHED PORTS"}
 	}
@@ -410,7 +410,7 @@ func ColPortsNotPublished(ctx *cli.PSContext, allData []docker.ContainerSchema, 
 	return r
 }
 
-func ColName(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColName(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"NAME"}
 	}
@@ -426,7 +426,7 @@ func ColName(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.
 	return r
 }
 
-func ColSize(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColSize(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"SIZE"}
 	}
@@ -438,7 +438,7 @@ func ColSize(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.
 	return []string{fmt.Sprintf("%v (virt %v)", langext.StrPadRight(langext.FormatBytes(cont.SizeRw), " ", 11), langext.FormatBytes(cont.SizeRootFs))}
 }
 
-func ColMounts(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColMounts(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"MOUNTS"}
 	}
@@ -455,7 +455,7 @@ func ColMounts(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docke
 	return r
 }
 
-func ColIP(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColIP(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"IP"}
 	}
@@ -470,7 +470,7 @@ func ColIP(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.Co
 	return r
 }
 
-func ColLabels(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColLabels(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"LABELS"}
 	}
@@ -483,7 +483,7 @@ func ColLabels(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docke
 	return r
 }
 
-func ColLabelKeys(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColLabelKeys(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"LABELS"}
 	}
@@ -496,7 +496,7 @@ func ColLabelKeys(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *do
 	return r
 }
 
-func ColNetworks(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColNetworks(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"NETWORKS"}
 	}
@@ -509,7 +509,7 @@ func ColNetworks(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *doc
 	return r
 }
 
-func ColUser(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+func ColUser(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 	if cont == nil {
 		return []string{"USER"}
 	}
@@ -522,14 +522,14 @@ func ColUser(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.
 }
 
 func ColPlaintext(str string) printer.ColFun {
-	return func(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) []string {
+	return func(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) []string {
 		return []string{str}
 	}
 }
 
 // #####################################################################################################################
 
-func SortContainerID(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortContainerID(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	if ctx.Opt.Truncate {
 		return langext.Compare(v1.ID[0:12], v2.ID[0:12])
 	} else {
@@ -537,36 +537,36 @@ func SortContainerID(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.
 	}
 }
 
-func SortFullImage(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortFullImage(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	return langext.Compare(v1.Image, v2.Image)
 }
 
-func SortRegistry(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
-	reg1, _, _ := docker.SplitDockerImage(ctx, v1.Image)
-	reg2, _, _ := docker.SplitDockerImage(ctx, v2.Image)
+func SortRegistry(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
+	reg1, _, _ := podman.SplitContainerImage(ctx, v1.Image)
+	reg2, _, _ := podman.SplitContainerImage(ctx, v2.Image)
 
 	return langext.Compare(reg1, reg2)
 }
 
-func SortImage(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
-	_, img1, _ := docker.SplitDockerImage(ctx, v1.Image)
-	_, img2, _ := docker.SplitDockerImage(ctx, v2.Image)
+func SortImage(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
+	_, img1, _ := podman.SplitContainerImage(ctx, v1.Image)
+	_, img2, _ := podman.SplitContainerImage(ctx, v2.Image)
 
 	return langext.Compare(img1, img2)
 }
 
-func SortImageTag(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
-	_, _, tag1 := docker.SplitDockerImage(ctx, v1.Image)
-	_, _, tag2 := docker.SplitDockerImage(ctx, v2.Image)
+func SortImageTag(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
+	_, _, tag1 := podman.SplitContainerImage(ctx, v1.Image)
+	_, _, tag2 := podman.SplitContainerImage(ctx, v2.Image)
 
 	return langext.Compare(tag1, tag2)
 }
 
-func SortCommand(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortCommand(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	return langext.Compare(v1.Command, v2.Command)
 }
 
-func SortShortCommand(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortShortCommand(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	spl1 := strings.Split(v1.Command, " ")
 	sc1 := ""
 	if len(spl1) > 0 {
@@ -582,30 +582,30 @@ func SortShortCommand(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker
 	return langext.Compare(sc1, sc2)
 }
 
-func SortRunningFor(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortRunningFor(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	return langext.Compare(v1.Created, v2.Created) * -1 // runnign for is 'now - created', so we need to invert the sort order
 }
 
-func SortCreatedAt(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortCreatedAt(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	return langext.Compare(v1.Created, v2.Created)
 }
 
-func SortState(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortState(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	return langext.Compare(v1.State.Num(), v2.State.Num())
 }
 
-func SortStatus(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortStatus(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	return langext.Compare(v1.Status, v2.Status)
 }
 
-func SortPortsExposed(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortPortsExposed(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	parr1 := langext.ArrCopy(v1.Ports)
 	parr2 := langext.ArrCopy(v2.Ports)
 
-	pl1 := langext.ArrMap(parr1, func(v docker.PortSchema) string {
+	pl1 := langext.ArrMap(parr1, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%s;%08d;%08d;%s", v.IP, v.PrivatePort, v.PublicPort, v.Type)
 	})
-	pl2 := langext.ArrMap(parr2, func(v docker.PortSchema) string {
+	pl2 := langext.ArrMap(parr2, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%s;%08d;%08d;%s", v.IP, v.PrivatePort, v.PublicPort, v.Type)
 	})
 
@@ -618,17 +618,17 @@ func SortPortsExposed(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker
 	return langext.Compare(pstr1, pstr2)
 }
 
-func SortPortsPublished(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortPortsPublished(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	parr1 := langext.ArrCopy(v1.Ports)
 	parr2 := langext.ArrCopy(v2.Ports)
 
-	parr1 = langext.ArrFilter(parr1, func(v docker.PortSchema) bool { return v.PublicPort != 0 })
-	parr2 = langext.ArrFilter(parr2, func(v docker.PortSchema) bool { return v.PublicPort != 0 })
+	parr1 = langext.ArrFilter(parr1, func(v podman.PortSchema) bool { return v.PublicPort != 0 })
+	parr2 = langext.ArrFilter(parr2, func(v podman.PortSchema) bool { return v.PublicPort != 0 })
 
-	pl1 := langext.ArrMap(parr1, func(v docker.PortSchema) string {
+	pl1 := langext.ArrMap(parr1, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%s;%08d;%08d;%s", v.IP, v.PrivatePort, v.PublicPort, v.Type)
 	})
-	pl2 := langext.ArrMap(parr2, func(v docker.PortSchema) string {
+	pl2 := langext.ArrMap(parr2, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%s;%08d;%08d;%s", v.IP, v.PrivatePort, v.PublicPort, v.Type)
 	})
 
@@ -641,17 +641,17 @@ func SortPortsPublished(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *dock
 	return langext.Compare(pstr1, pstr2)
 }
 
-func SortPortsPublishedShort(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortPortsPublishedShort(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	parr1 := langext.ArrCopy(v1.Ports)
 	parr2 := langext.ArrCopy(v2.Ports)
 
-	parr1 = langext.ArrFilter(parr1, func(v docker.PortSchema) bool { return v.PublicPort != 0 })
-	parr2 = langext.ArrFilter(parr2, func(v docker.PortSchema) bool { return v.PublicPort != 0 })
+	parr1 = langext.ArrFilter(parr1, func(v podman.PortSchema) bool { return v.PublicPort != 0 })
+	parr2 = langext.ArrFilter(parr2, func(v podman.PortSchema) bool { return v.PublicPort != 0 })
 
-	pl1 := langext.ArrMap(parr1, func(v docker.PortSchema) string {
+	pl1 := langext.ArrMap(parr1, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%s;%08d;%08d;%s", v.IP, v.PrivatePort, v.PublicPort, v.Type)
 	})
-	pl2 := langext.ArrMap(parr2, func(v docker.PortSchema) string {
+	pl2 := langext.ArrMap(parr2, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%s;%08d;%08d;%s", v.IP, v.PrivatePort, v.PublicPort, v.Type)
 	})
 
@@ -664,17 +664,17 @@ func SortPortsPublishedShort(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 
 	return langext.Compare(pstr1, pstr2)
 }
 
-func SortPortsPublishedLong(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortPortsPublishedLong(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	parr1 := langext.ArrCopy(v1.Ports)
 	parr2 := langext.ArrCopy(v2.Ports)
 
-	parr1 = langext.ArrFilter(parr1, func(v docker.PortSchema) bool { return v.PublicPort != 0 })
-	parr2 = langext.ArrFilter(parr2, func(v docker.PortSchema) bool { return v.PublicPort != 0 })
+	parr1 = langext.ArrFilter(parr1, func(v podman.PortSchema) bool { return v.PublicPort != 0 })
+	parr2 = langext.ArrFilter(parr2, func(v podman.PortSchema) bool { return v.PublicPort != 0 })
 
-	pl1 := langext.ArrMap(parr1, func(v docker.PortSchema) string {
+	pl1 := langext.ArrMap(parr1, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%s;%08d;%08d;%s", v.IP, v.PrivatePort, v.PublicPort, v.Type)
 	})
-	pl2 := langext.ArrMap(parr2, func(v docker.PortSchema) string {
+	pl2 := langext.ArrMap(parr2, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%s;%08d;%08d;%s", v.IP, v.PrivatePort, v.PublicPort, v.Type)
 	})
 
@@ -687,17 +687,17 @@ func SortPortsPublishedLong(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *
 	return langext.Compare(pstr1, pstr2)
 }
 
-func SortPortsNotPublished(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortPortsNotPublished(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	parr1 := langext.ArrCopy(v1.Ports)
 	parr2 := langext.ArrCopy(v2.Ports)
 
-	parr1 = langext.ArrFilter(parr1, func(v docker.PortSchema) bool { return v.PublicPort == 0 })
-	parr2 = langext.ArrFilter(parr2, func(v docker.PortSchema) bool { return v.PublicPort == 0 })
+	parr1 = langext.ArrFilter(parr1, func(v podman.PortSchema) bool { return v.PublicPort == 0 })
+	parr2 = langext.ArrFilter(parr2, func(v podman.PortSchema) bool { return v.PublicPort == 0 })
 
-	pl1 := langext.ArrMap(parr1, func(v docker.PortSchema) string {
+	pl1 := langext.ArrMap(parr1, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%s;%08d;%08d;%s", v.IP, v.PrivatePort, v.PublicPort, v.Type)
 	})
-	pl2 := langext.ArrMap(parr2, func(v docker.PortSchema) string {
+	pl2 := langext.ArrMap(parr2, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%s;%08d;%08d;%s", v.IP, v.PrivatePort, v.PublicPort, v.Type)
 	})
 
@@ -710,17 +710,17 @@ func SortPortsNotPublished(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *d
 	return langext.Compare(pstr1, pstr2)
 }
 
-func SortPortsPublicPart(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortPortsPublicPart(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	parr1 := langext.ArrCopy(v1.Ports)
 	parr2 := langext.ArrCopy(v2.Ports)
 
-	parr1 = langext.ArrFilter(parr1, func(v docker.PortSchema) bool { return v.PublicPort != 0 })
-	parr2 = langext.ArrFilter(parr2, func(v docker.PortSchema) bool { return v.PublicPort != 0 })
+	parr1 = langext.ArrFilter(parr1, func(v podman.PortSchema) bool { return v.PublicPort != 0 })
+	parr2 = langext.ArrFilter(parr2, func(v podman.PortSchema) bool { return v.PublicPort != 0 })
 
-	pl1 := langext.ArrMap(parr1, func(v docker.PortSchema) string {
+	pl1 := langext.ArrMap(parr1, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%08d", v.PublicPort)
 	})
-	pl2 := langext.ArrMap(parr2, func(v docker.PortSchema) string {
+	pl2 := langext.ArrMap(parr2, func(v podman.PortSchema) string {
 		return fmt.Sprintf("%08d", v.PublicPort)
 	})
 
@@ -733,7 +733,7 @@ func SortPortsPublicPart(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *doc
 	return langext.Compare(pstr1, pstr2)
 }
 
-func SortName(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortName(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	names1 := langext.ArrCopy(v1.Names)
 	names2 := langext.ArrCopy(v2.Names)
 
@@ -743,15 +743,15 @@ func SortName(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.Contain
 	return langext.CompareArr(names1, names2)
 }
 
-func SortSize(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortSize(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	return langext.CompareArr([]int64{v1.SizeRw, v1.SizeRootFs}, []int64{v2.SizeRw, v2.SizeRootFs})
 }
 
-func SortMounts(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
-	mounts1 := langext.ArrMap(v1.Mounts, func(v docker.ContainerMount) string {
+func SortMounts(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
+	mounts1 := langext.ArrMap(v1.Mounts, func(v podman.ContainerMount) string {
 		return fmt.Sprintf("%s\n%s", v.Source, v.Destination)
 	})
-	mounts2 := langext.ArrMap(v2.Mounts, func(v docker.ContainerMount) string {
+	mounts2 := langext.ArrMap(v2.Mounts, func(v podman.ContainerMount) string {
 		return fmt.Sprintf("%s\n%s", v.Source, v.Destination)
 	})
 
@@ -761,11 +761,11 @@ func SortMounts(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.Conta
 	return langext.CompareArr(mounts1, mounts2)
 }
 
-func SortIP(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
-	ips1 := langext.ArrMap(langext.MapToArr(v1.NetworkSettings.Networks), func(v langext.MapEntry[string, docker.ContainerSingleNetworkSettings]) string {
+func SortIP(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
+	ips1 := langext.ArrMap(langext.MapToArr(v1.NetworkSettings.Networks), func(v langext.MapEntry[string, podman.ContainerSingleNetworkSettings]) string {
 		return v.Value.IPAddress
 	})
-	ips2 := langext.ArrMap(langext.MapToArr(v2.NetworkSettings.Networks), func(v langext.MapEntry[string, docker.ContainerSingleNetworkSettings]) string {
+	ips2 := langext.ArrMap(langext.MapToArr(v2.NetworkSettings.Networks), func(v langext.MapEntry[string, podman.ContainerSingleNetworkSettings]) string {
 		return v.Value.IPAddress
 	})
 
@@ -789,7 +789,7 @@ func SortIP(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.Container
 	return langext.CompareArr(ips1, ips2)
 }
 
-func SortLabels(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortLabels(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	lbls1 := langext.ArrMap(langext.MapToArr(v1.Labels), func(v langext.MapEntry[string, string]) string {
 		return fmt.Sprintf("%s\n%s", v.Key, v.Value)
 	})
@@ -803,7 +803,7 @@ func SortLabels(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.Conta
 	return langext.CompareArr(lbls1, lbls2)
 }
 
-func SortLabelKeys(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortLabelKeys(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	lbls1 := langext.ArrMap(langext.MapToArr(v1.Labels), func(v langext.MapEntry[string, string]) string {
 		return v.Key
 	})
@@ -817,11 +817,11 @@ func SortLabelKeys(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.Co
 	return langext.CompareArr(lbls1, lbls2)
 }
 
-func SortNetworks(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
-	ntwrk1 := langext.ArrMap(langext.MapToArr(v1.NetworkSettings.Networks), func(v langext.MapEntry[string, docker.ContainerSingleNetworkSettings]) string {
+func SortNetworks(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
+	ntwrk1 := langext.ArrMap(langext.MapToArr(v1.NetworkSettings.Networks), func(v langext.MapEntry[string, podman.ContainerSingleNetworkSettings]) string {
 		return v.Key
 	})
-	ntwrk2 := langext.ArrMap(langext.MapToArr(v2.NetworkSettings.Networks), func(v langext.MapEntry[string, docker.ContainerSingleNetworkSettings]) string {
+	ntwrk2 := langext.ArrMap(langext.MapToArr(v2.NetworkSettings.Networks), func(v langext.MapEntry[string, podman.ContainerSingleNetworkSettings]) string {
 		return v.Key
 	})
 
@@ -831,7 +831,7 @@ func SortNetworks(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.Con
 	return langext.CompareArr(ntwrk1, ntwrk2)
 }
 
-func SortUser(ctx *cli.PSContext, v1 *docker.ContainerSchema, v2 *docker.ContainerSchema) int {
+func SortUser(ctx *cli.PSContext, v1 *podman.ContainerSchema, v2 *podman.ContainerSchema) int {
 	u1 := ""
 	if v1.Config != nil {
 		u1 = v1.Config.User
@@ -872,7 +872,7 @@ func getColFun(colkey string) (printer.ColFun, bool) {
 }
 
 func templateColFun(fmtstr string, header string) printer.ColFun {
-	return func(ctx *cli.PSContext, allData []docker.ContainerSchema, cont *docker.ContainerSchema) (res []string) {
+	return func(ctx *cli.PSContext, allData []podman.ContainerSchema, cont *podman.ContainerSchema) (res []string) {
 		defer func() {
 			if r := recover(); r != nil {
 				ctx.PrintErrorMessage(fmt.Sprintf("Panic in template evaluation of '%s':\n%v", fmtstr, r))
@@ -989,7 +989,7 @@ func getSortFun(colkey string) (ColSortFun, bool) {
 	return nil, false
 }
 
-func replaceSingleLineColumnData(ctx *cli.PSContext, allData []docker.ContainerSchema, data docker.ContainerSchema, format string) string {
+func replaceSingleLineColumnData(ctx *cli.PSContext, allData []podman.ContainerSchema, data podman.ContainerSchema, format string) string {
 
 	r := format
 
@@ -1014,19 +1014,19 @@ func parseTableDef(fmt string) []printer.ColFun {
 	return columns1
 }
 
-func stateColor(state docker.ContainerState, value string) string {
+func stateColor(state podman.ContainerState, value string) string {
 	switch state {
-	case docker.StateCreated:
+	case podman.StateCreated:
 		return termext.Yellow(value)
-	case docker.StateRunning:
+	case podman.StateRunning:
 		return termext.Green(value)
-	case docker.StateRestarting:
+	case podman.StateRestarting:
 		return termext.Yellow(value)
-	case docker.StateExited:
+	case podman.StateExited:
 		return termext.Red(value)
-	case docker.StatePaused:
+	case podman.StatePaused:
 		return termext.Yellow(value)
-	case docker.StateDead:
+	case podman.StateDead:
 		return termext.Red(value)
 	}
 	return value

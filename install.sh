@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# This script handles the installation of 'dops' by detecting the OS
+# This script handles the installation of 'pops' by detecting the OS
 # and architecture, downloading the appropriate binary, and configuring the shell PATH.
 
 # Reset
@@ -47,87 +47,11 @@ info_bold() {
     echo -e "${Bold_White}$@ ${Color_Off}"
 }
 
-# Check if we're on Arch Linux
-is_arch_linux() {
-    [[ -f /etc/arch-release ]] || command -v pacman >/dev/null 2>&1
-}
-
-# Detect available AUR helpers in order of preference
-detect_aur_helper() {
-    local aur_helpers=("yay" "paru" "pikaur" "pamac" "trizen" "yaourt")
-    
-    for helper in "${aur_helpers[@]}"; do
-        if command -v "$helper" >/dev/null 2>&1; then
-            echo "$helper"
-            return 0
-        fi
-    done
-    return 1
-}
-
-# Install via AUR
-install_via_aur() {
-    local aur_helper="$1"
-    
-    info "Installing 'dops' via AUR using ${aur_helper}..."
-    
-    case "$aur_helper" in
-        yay|paru|pikaur)
-            "$aur_helper" -S --noconfirm dops-bin ||
-                error "Failed to install dops-bin via $aur_helper"
-            ;;
-        pamac)
-            pamac install --no-confirm dops-bin ||
-                error "Failed to install dops-bin via pamac"
-            ;;
-        trizen|yaourt)
-            "$aur_helper" -S --noconfirm dops-bin ||
-                error "Failed to install dops-bin via $aur_helper"
-            ;;
-        *)
-            error "Unsupported AUR helper: $aur_helper"
-            ;;
-    esac
-    
-    success "dops was installed successfully via AUR using $aur_helper"
-    echo "Run 'dops --help' to get started"
-    
-    echo
-    info "To use 'dops' as a drop-in replacement for 'docker ps',"
-    info "add the following function to your shell configuration file (e.g., ~/.zshrc, ~/.bashrc):"
-    echo
-    info_bold 'docker() {'
-    info_bold '  case $1 in'
-    info_bold '    ps)'
-    info_bold '      shift'
-    info_bold '      command dops "$@"'
-    info_bold '      ;;'
-    info_bold '    *)'
-    info_bold '      command docker "$@";;'
-    info_bold '  esac'
-    info_bold '}'
-    
-    exit 0
-}
-
-# Try AUR installation first on Arch Linux
-if is_arch_linux; then
-    info "Detected Arch Linux, checking for AUR helpers..."
-    
-    if aur_helper=$(detect_aur_helper); then
-        install_via_aur "$aur_helper"
-    else
-        info "No AUR helper found (yay, paru, pikaur, pamac, trizen, yaourt)"
-        info "Falling back to binary installation..."
-        echo
-    fi
-fi
-
 # Check for curl
 command -v curl >/dev/null ||
-    error 'curl is required to install dops'
+    error 'curl is required to install pops'
 
-REPO="Mikescher/better-docker-ps"
+REPO="fwiko/better-podman-ps"
 BINARY_NAME=""
 
 # Platform detection
@@ -139,16 +63,9 @@ info "Detecting platform: ${OS}/${ARCH}..."
 case "$OS" in
     Linux)
         if [ "$ARCH" = "x86_64" ]; then
-            BINARY_NAME="dops_linux-amd64-static"
+            BINARY_NAME="pops_linux-amd64-static"
         elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-            BINARY_NAME="dops_linux-arm64-static"
-        fi
-        ;;
-    Darwin)
-        if [ "$ARCH" = "arm64" ]; then
-            BINARY_NAME="dops_macos-arm64"
-        elif [ "$ARCH" = "x86_64" ]; then
-            error "Intel-based Macs are not supported."
+            BINARY_NAME="pops_linux-arm64-static"
         fi
         ;;
 esac
@@ -159,25 +76,25 @@ fi
 
 DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${BINARY_NAME}"
 
-install_env=DOPS_INSTALL
+install_env=POPS_INSTALL
 bin_env=\$$install_env/bin
 
-install_dir=${!install_env:-$HOME/.dops}
+install_dir=${!install_env:-$HOME/.pops}
 bin_dir=$install_dir/bin
-exe=$bin_dir/dops
+exe=$bin_dir/pops
 
 if [[ ! -d $bin_dir ]]; then
     mkdir -p "$bin_dir" ||
         error "Failed to create install directory \"$bin_dir\""
 fi
 
-info "Downloading 'dops' from ${DOWNLOAD_URL}..."
+info "Downloading 'pops' from ${DOWNLOAD_URL}..."
 
 curl --fail --location --progress-bar --output "$exe" "$DOWNLOAD_URL" ||
-    error "Failed to download dops from \"$DOWNLOAD_URL\""
+    error "Failed to download pops from \"$DOWNLOAD_URL\""
 
 chmod +x "$exe" ||
-    error 'Failed to set permissions on dops executable'
+    error 'Failed to set permissions on pops executable'
 
 tildify() {
     if [[ $1 = $HOME/* ]]; then
@@ -188,10 +105,10 @@ tildify() {
     fi
 }
 
-success "dops was installed successfully to $Bold_Green$(tildify "$exe")"
+success "pops was installed successfully to $Bold_Green$(tildify "$exe")"
 
-if command -v dops >/dev/null; then
-    echo "Run 'dops --help' to get started"
+if command -v pops >/dev/null; then
+    echo "Run 'pops --help' to get started"
     exit
 fi
 
@@ -218,7 +135,7 @@ fish)
 
     if [[ -w $fish_config ]]; then
         {
-            echo -e '\n# dops'
+            echo -e '\n# pops'
             for command in "${commands[@]}"; do
                 echo "$command"
             done
@@ -243,7 +160,7 @@ zsh)
 
     if [[ -w $zsh_config ]]; then
         {
-            echo -e '\n# dops'
+            echo -e '\n# pops'
             for command in "${commands[@]}"; do
                 echo "$command"
             done
@@ -283,7 +200,7 @@ bash)
 
         if [[ -w $bash_config ]]; then
             {
-                echo -e '\n# dops'
+                echo -e '\n# pops'
                 for command in "${commands[@]}"; do
                     echo "$command"
                 done
@@ -317,19 +234,19 @@ if [[ $refresh_command ]]; then
     info_bold "  $refresh_command"
 fi
 
-info_bold "  dops --help"
+info_bold "  pops --help"
 
 echo
-info "To use 'dops' as a drop-in replacement for 'docker ps',"
+info "To use 'pops' as a drop-in replacement for 'podman ps',"
 info "add the following function to your shell configuration file (e.g., ~/.zshrc, ~/.bashrc):"
 echo
-info_bold 'docker() {'
+info_bold 'podman() {'
 info_bold '  case $1 in'
 info_bold '    ps)'
 info_bold '      shift'
-info_bold '      command dops "$@"'
+info_bold '      command pops "$@"'
 info_bold '      ;;'
 info_bold '    *)'
-info_bold '      command docker "$@";;'
+info_bold '      command podman "$@";;'
 info_bold '  esac'
 info_bold '}'

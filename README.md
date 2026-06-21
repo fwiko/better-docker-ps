@@ -1,52 +1,79 @@
-# ./dops - better `docker ps` 
-A replacement for the default docker-ps that tries really hard to fit within your terminal width.
+# ./pops - better `podman ps` 
+A replacement for the default podman-ps that tries really hard to fit within
+your terminal width.
+
+> [!NOTE]
+> This is a fork of [Mikescher/better-docker-ps](https://github.com/Mikescher/better-docker-ps),
+> migrated to provide the same functionality for `podman ps` instead of
+> `docker ps`.
+
+> [!WARNING]
+> Mac OS support has been removed as I do not have the ability to confidently test.
+
+> [!IMPORTANT]
+> The below README contents remains unchanged.
 
 ![](readme.d/main.png)
 
 ## Rationale
 
-By default, my `docker ps` output is really wide and every line wraps around into three.
-This (obviously) breaks the tabular display and makes everything chaotic.  
-*(This gets especially bad if one container has multiple port mappings, and they are all displayed in a single row)*
-It doesn't look like we'll get improved output in the foreseeable future (see [moby#7477](https://github.com/moby/moby/issues/7477)), so I decided to make my own drop-in replacement.  
+By default, my `docker ps` output is really wide and every line wraps around
+into three. This (obviously) breaks the tabular display and makes everything  
+chaotic. *(This gets especially bad if one container has multiple port mappings,
+and they are all displayed in a single row)* It doesn't look like we'll get
+improved output in the foreseeable future (see
+[moby#7477](https://github.com/moby/moby/issues/7477)), so I decided to make my
+own drop-in replacement.  
 
 ## Features
 
  - All normal commandline flags/options from docker-ps work *(almost)* the same.
- - Write multi-value data (like multiple port mappings, multiple networks, etc.) into multiple lines instead of concatenating them.
+ - Write multi-value data (like multiple port mappings, multiple networks, etc.)
+   into multiple lines instead of concatenating them.
  - Add color to the STATE and STATUS column (green / yellow / red).
- - Automatically remove columns in the output until it fits in the current terminal width.
+ - Automatically remove columns in the output until it fits in the current
+   terminal width.
  - sort the output with the `--sort` argument
  - Enter watch mode with the `--watch` argument
 
 More Changes from default docker-ps:
  - Show (by default) the container-cmd without arguments.
- - Show the ImageName (by default) without the registry prefix, and split ImageName and ImageTag into two columns.
+ - Show the ImageName (by default) without the registry prefix, and split
+   ImageName and ImageTag into two columns.
  - Added the columns IP and NETWORK to the default column set (if they fit)
  - Added support for a few new columns (via --format):  
-   `{{.ImageName}`, `{{.ImageTag}`, `{{.Tag}`, `{{.ImageRegistry}`, `{{.Registry}`, `{{.ShortCommand}`, `{{.LabelKeys}`, `{{.IP}`, `{{.User}`                         
- - The `{{.User}}` column shows the user a container runs as (`Config.User`). Because this is not part of the
-   cheaper container-list endpoint, dops only queries the (slower) container-inspect endpoint when this column is used.
- - Added options to control the color-output, the used socket, the time-zone and time-format, etc (see `./dops --help`) 
+   `{{.ImageName}`, `{{.ImageTag}`, `{{.Tag}`, `{{.ImageRegistry}`,
+   `{{.Registry}`, `{{.ShortCommand}`, `{{.LabelKeys}`, `{{.IP}`, `{{.User}`  
+ - The `{{.User}}` column shows the user a container runs as (`Config.User`).
+   Because this is not part of the cheaper container-list endpoint, dops only
+   queries the (slower) container-inspect endpoint when this column is used.
+ - Added options to control the color-output, the used socket, the time-zone and
+   time-format, etc (see `./dops --help`)
 
 ## Getting started
 
 ### Generic Linux (e.g. Debian/Fedora/...)
- - Download the latest binary from the [releases page](https://github.com/Mikescher/better-docker-ps/releases) and put it into your PATH (eg /usr/local/bin)
- - You can also use the following one-liner (afterwards you can use the `dops` command everywhere):
+ - Download the latest binary from the
+   [releases page](https://github.com/Mikescher/better-docker-ps/releases) and
+   put it into your PATH (eg /usr/local/bin)
+ - You can also use the following one-liner (afterwards you can use the `dops`
+   command everywhere):
 ```
 sudo wget "https://github.com/Mikescher/better-docker-ps/releases/latest/download/dops_linux-amd64-static" -O "/usr/local/bin/dops" && sudo chmod +x "/usr/local/bin/dops"
 ```
 
 ### ArchLinux
  - Alternatively you can use one of the AUR packages (under Arch Linux):
-    * https://aur.archlinux.org/packages/dops-bin (installs `dops` into your PATH)
-    * https://aur.archlinux.org/packages/dops-git (installs `dops` into your PATH)
- - or the homebrew package: 
+    * https://aur.archlinux.org/packages/dops-bin (installs `dops` into your
+      PATH)
+    * https://aur.archlinux.org/packages/dops-git (installs `dops` into your
+      PATH)
+ - or the homebrew package:
     * `brew tap mikescher/tap && brew install dops`
 
 ### Optional steps
- - Alias the docker ps command to `dops` (see [section below](#usage-as-drop-in-replacement))
+ - Alias the docker ps command to `dops` (see
+   [section below](#usage-as-drop-in-replacement))
 
 ### Building from source
 
@@ -78,7 +105,8 @@ Output on a small terminal
 
 ## Usage as drop-in replacement
 
-You can fully replace docker ps by creating a shell function in your `.bashrc` / `.zshrc`...
+You can fully replace docker ps by creating a shell function in your `.bashrc` /
+`.zshrc`...
 
 ~~~sh
 docker() {
@@ -93,7 +121,8 @@ docker() {
 }
 ~~~
 
-This will alias every call to `docker ps ...` with `dops ...` (be sure to have the dops binary in your PATH).
+This will alias every call to `docker ps ...` with `dops ...` (be sure to have
+the dops binary in your PATH).
 
 If you are using the fish-shell you have to create a (similar) function:
 
@@ -112,24 +141,31 @@ end
 
 ## Changing the output format
 
-By default dops tries to be "intelligent" and find the best output format for your terminal width.
-The current output formats (= table columns) are defined in the [options.go](https://github.com/Mikescher/better-docker-ps/blob/master/cli/options.go).
+By default dops tries to be "intelligent" and find the best output format for
+your terminal width. The current output formats (= table columns) are defined in
+the
+[options.go](https://github.com/Mikescher/better-docker-ps/blob/master/cli/options.go).
 The first format that fits in your terminal width is used.
 
-But you can also override it by supplying a `--format` parameter. If you supply more than one `--format` parameter the first one that fits your terminal is used (same logic as with the default ones...)
+But you can also override it by supplying a `--format` parameter. If you supply
+more than one `--format` parameter the first one that fits your terminal is used
+(same logic as with the default ones...)
 
 Normally only simple columns aka `{{.Status}}` are supported.  
-But you can also use the full golang template syntax (e.g. `{{ printf "%.15s" .Command }}`).
-In this case it can be useful to specify the column header by prefixing it with a colon (`SHORTENED NAME:{{ printf "%.10s" (join .Names ";") }}`)
+But you can also use the full golang template syntax (e.g.
+`{{ printf "%.15s" .Command }}`). In this case it can be useful to specify the
+column header by prefixing it with a colon
+(`SHORTENED NAME:{{ printf "%.10s" (join .Names ";") }}`)
 
-The following functions are defined in these templates (plus the [default go functions](https://pkg.go.dev/text/template)):
+The following functions are defined in these templates (plus the
+[default go functions](https://pkg.go.dev/text/template)):
  - `join`: strings.Join
  - `array_last`: v\[-1\]
- - `array_slice`: v\[a..b\] 
+ - `array_slice`: v\[a..b\]
  - `in_array`: v1.contains(v2)
  - `json`: json.Marshal(v)
- - `json_indent`: json.MarshalIndent(v, "", "  ")
- - `json_pretty`:  json.Indent(v, "", "  ")
+ - `json_indent`: json.MarshalIndent(v, "", " ")
+ - `json_pretty`: json.Indent(v, "", " ")
  - `coalesce`: v1 ?? v2
  - `to_string`: fmt.Sprintf("%v", v)
  - `deref`: *v
@@ -159,11 +195,13 @@ $ ./dops --format "table {{.ID}}\\tNAME:{{ printf \"%.10s\" (join .Names \";\") 
 ## Persistant configuration
 
 You can also configure some/most of the options via a configuration file.  
-Place a TOML formatted file in `$HOME/.config/dops.conf` / `$XDG_CONFIG_HOME/dops.conf`.  
-( `~/Library/Application Support/dops.conf` is also supported under macOS )
+Place a TOML formatted file in `$HOME/.config/dops.conf` /  
+`$XDG_CONFIG_HOME/dops.conf`. ( `~/Library/Application Support/dops.conf` is
+also supported under macOS )
 
 The first existing file from the following locations is used:
- - `$XDG_CONFIG_HOME/dops.conf` (or the platform default, e.g. `~/Library/Application Support/dops.conf` under macOS)
+ - `$XDG_CONFIG_HOME/dops.conf` (or the platform default, e.g.
+   `~/Library/Application Support/dops.conf` under macOS)
  - `~/.config/dops.conf`
 
 The following keys are supported:

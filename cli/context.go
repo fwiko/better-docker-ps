@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"better-docker-ps/pserr"
+	"better-podman-ps/pserr"
 	"context"
 	"encoding/hex"
 	"fmt"

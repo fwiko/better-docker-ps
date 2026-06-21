@@ -3,13 +3,13 @@ package pserr
 import "github.com/joomcode/errorx"
 
 var (
-	DopsErrors = errorx.NewNamespace("dops")
+	PopsErrors = errorx.NewNamespace("pops")
 )
 
 var (
-	DirectOutput = DopsErrors.NewType("direct_out")
+	DirectOutput = PopsErrors.NewType("direct_out")
 )
 
 var (
-	Exitcode = errorx.RegisterProperty("dops.exitcode")
+	Exitcode = errorx.RegisterProperty("pops.exitcode")
 )
